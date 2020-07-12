@@ -1,0 +1,21 @@
+package="MMIOGPNG"
+codepage=850
+filelist="MMIOGPNG.LST"
+groupcount=1
+munitcount=1
+medianame="PNG MMIO Procedure (beta 0.7)"
+
+destindir = "\\MMOS2\\INSTALL\\"          = 0
+destindir = "\\MMOS2\\DLL\\"              = 1
+destindir = "\\MMOS2\\"                   = 2
+destindir = "\\MMOS2\\IMAGES\\"           = 3
+
+ssgroup=1
+ssicon="PNG.ICO"
+ssname="PNG MMIO Procedure (beta 0.7)"
+sssize=70
+ssversion="0.7.0"
+ssselect="YES"
+ssinich="MMIOGPNG.SCR"
+
+

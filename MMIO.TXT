@@ -1,0 +1,254 @@
+ 
+ Multimedia input/output (MMIO) services provides both I/O and CODEC procedures.  I/O procedures are 
+ message-based handlers, which direct the input and output associated with reading and writing to different types of 
+ storage systems or file formats.  Applications and the MMIO subsystem communicate to I/O procedures (DLL files) 
+ through the use of MMIO messages.  When MMIO receives a request from an application through a function call, the 
+ MMIO Manager sends a predefined message for that operation to the I/O procedure responsible for that particular file 
+ format or storage system.  In turn, the I/O procedure performs operations based on the messages it receives from 
+ the MMIO Manager or an application. 
+
+ These messages are designed for efficient communications to all I/O procedures.  The I/O procedures, however, 
+ must be able to process the messages or pass them on to a child I/O procedure.  For example, if an I/O procedure 
+ receives a message requesting the compression of data object, the I/O procedure must be able to process the 
+ message, or pass the message to a CODEC procedure. 
+ 
+ The MMIO Manager calls the following types of procedures: 
+
+  File Format 
+            A file format procedure is an I/O procedure that manipulates data at the element level, with each procedure 
+            handling a different element type such as audio, image, or MIDI.  It processes the data "within" the object 
+            and does not rely on any other file format I/O procedures to process the data.  However, a file format 
+            procedure might need to call a storage system I/O procedure to obtain data within a file containing multiple 
+            elements. 
+
+  Storage System 
+            A storage system procedure is an I/O procedure that "unwraps" a data object for a file format procedure to 
+            access.  Storage system procedures are unaware of the format of the data object contained within the 
+            wrapper. 
+
+  CODEC 
+            A CODEC procedure operates on data within a file or buffer.  Based on the data content, an I/O procedure 
+            can load a CODEC procedure to either compress or decompress data. 
+  
+ 
+ MMIO provides a set of options in its API to support two modes of file access - translated and untranslated.  These 
+ modes enable an application to access data in its pure, proprietary format, or in a standard presentation format when 
+ performing its I/O operations.  An IOProc can be written to optionally support both access methods. 
+
+ The default mode of access, untranslated, allows the caller to perform I/O of file data in its native format.  All 
+ header information and any data is written to a file or read from a file and presented at the caller level without 
+ modification. 
+
+ The optional mode of access, translated, is the method used to mask proprietary data formats and allow a caller to 
+ use standardized header and data formats for a specific media type (for example, audio, image, or MIDI).  A set of 
+ standard header formats and accompanying data formats have been defined as the standard presentation format for 
+ these purposes.  An IOProc can be written to optionally support the standard format.  It performs the translation of 
+ header information, data information, or both from its native format to the standard format for that media type during 
+ read and write type operations.  The translation is performed for the file header and data. 
+
+ With full translation capability enabled in pairs of IOProcs, it is possible to convert files from one format to another 
+ very easily.  File conversion is simply a combination of loading from one file and saving to another.  For example, 
+ an application can read from an AVC image file with translation enabled, to the standard presentation format, which 
+ is the OS/2 bit map.  The application can then use the bit map as desired, including displaying it on the screen, 
+ image manipulating, and printing.  Alternatively, the bit map could be saved in a different file format such as 
+ M-Motion, by writing to the M-Motion IOProc with translation enabled.   I/O procedures and applications must use the same standard 
+ presentation format of data defined for each media type 
+ for conversion to be enabled.  (The media types defined are image, audio, MIDI, digital video, and movie.)  These 
+ standard formats apply to media descriptive (header) information and media content.  The standard description 
+ structures are supersets of the headers each file format normally uses.  This permits all formats to place the subset 
+ of their information into the standard form for other applications to access.  Similarly, each specific format can 
+ retrieve only the subset that is necessary for its purpose.  The standard content format is a usable data format 
+ representation that maintains as much quality as possible. 
+ Translation functions assist these standard forms in helping to ensure that data is portable between applications, 
+ IOProcs, and the operating system services.  The structures containing descriptive information have fields that can 
+ be mapped to system structures, such as the OS/2 operating system's BITMAPINFOHEADER.  The content format 
+ must be directly usable by the operating system and services, or by standard hardware devices. 
+
+ The descriptive header and content formats are tightly coupled.  If a file contains a media item, an application can 
+ query the header describing the media.  The IOProc returns the header, which includes the supported content format 
+ most closely matching the information actually in the file.  For example, if an image file contains 21-bit YUV data, 
+ the IOProc for that file informs the application that it is providing 24-bit RGB.  The IOProc is responsible for 
+ translating all subsequent read operations from YUV to RGB.  In addition, when an application is creating a new 
+ media element, it can set the header for a new media item.  All subsequent translated write operations, which are 
+ sent from the application to the IOProc, must contain data in the content format described by the header. 
+
+ Each data type uses different description structures and content formats. The following table gives an overview of 
+ the standard presentation formats for supported media types. 
+
+ ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+ ³Media     ³Header    ³Data                                    ³
+ ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+ ³Audio     ³MMAUDIO   ³PCM 11.025, 22.05, 33.1 Khz             ³
+ ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+ ³Image     ³MMIMAGE   ³OS/2 1.3 bit map (24 bit RGB, 1, 4, 8   ³
+ ³          ³          ³bit palette)                            ³
+ ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+ ³MIDI      ³MMMIDI    ³Format 0 or 1                           ³
+ ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+ ³MOVIES    ³MMMOVIE   ³Multi-track video and audio             ³
+ ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+ ³VIDEO     ³MMVIDEO   ³16, 24 bit RGB, 4, 8 bit palette        ³
+ ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+ 
+ Note:  Data translation in compound multimedia files is only performed on media elements in the file.  Translation 
+        is not performed on non-multimedia files. 
+ 
+ Several MMIO functions use the MMFORMATINFO data structure for media conversions.  The mmioOpen function 
+ includes MMIO_TRANSLATEHEADER and MMIO_TRANSLATEDATA flags which are defined in the ulTranslate field of 
+ the MMIOINFO structure.  All subsequent read and write operations of multimedia files return data based on these 
+ flags.  Translation is currently defined only for image and audio.  The MMIOOS2.H header file defines the 
+ MMFORMATINFO structure as shown in the following example. 
+ 
+
+ 
+ typedef struct _MMFORMATINFO {         /* mmformatinfo                 */
+                                                                        */
+    ULONG    ulStructLen;               /* Length of this structure     */
+    FOURCC   fccIOProc;                 /* IOProc identifier            */
+    ULONG    ulIOProcType;              /* Type of IOProc               */
+    ULONG    ulMediaType;               /* Media type                   */
+    ULONG    ulFlags;                   /* IOProc capability flags      */
+    CHAR     szDefaultFormatExt[sizeof(FOURCC) + 1];  */
+                                        /* Default extension 4 + null   */
+    ULONG    ulCodePage;                /* Code page                    */
+    ULONG    ulLanguage;                /* Language                     */
+    LONG     lNameLength;               /* Length of identifier string  */
+    } MMFORMATINFO;
+ 
+ 
+ 
+ The following example illustrates the the entry point used to access the functionality of an I/O procedure. 
+ 
+
+ 
+ LONG APIENTRY IOProc_Entry ( PVOID   pmmioStr,
+                              USHORT  usMessage,
+                              LONG    lParam1,
+                              LONG    lParam2)
+ 
+ Associated parameters include the following. 
+
+ ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+ ³Parameter      ³Description                                  ³
+ ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+ ³PVOID pmmioStr ³Specifies a pointer to an MMIOINFO data      ³
+ ³               ³structure that contains information about the³
+ ³               ³open file.                                   ³
+ ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+ ³USHORT usMsg   ³Specifies the message that the file I/O      ³
+ ³               ³procedure is being asked to process.         ³
+ ³               ³(User-defined messages must have messages    ³
+ ³               ³defined above MMIOM_USER.)                   ³
+ ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+ ³LONG lParam1   ³Specifies message-dependent information such ³
+ ³               ³as a file name.                              ³
+ ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+ ³LONG lParam2   ³Specifies additional message-dependent       ³
+ ³               ³information.  (Used with some messages as    ³
+ ³               ³values.)                                     ³
+ ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+ 
+ Note:  The return value is message-dependent.  If the I/O procedure does not recognize a message passed in by 
+        usMsg, and the default message handler does not recognize usMsg, then it must return 
+        MMIOERR_UNSUPPORTED_MESSAGE. 
+
+  
+ 
+ Each IOProc must be able to process the MMIOM_OPEN message, which requests that a file be opened.  Once the 
+ application knows which IOProc is associated with the selected file, it can open the file using mmioOpen.  The 
+ application references the appropriate IOProc using the FOURCC provided by the identification process. 
+
+ A file format IOProc must check for the following items when the MMIO Manager issues an MMIOM_OPEN message. 
+
+    o  File format IOProcs use the fccChildIOProc field from the pmmioinfo structure and perform another mmioOpen.  
+       The MMIO_NOIDENTIFY flag must be set in this case. 
+
+    o  The lLogicalFilePos of the MMIOINFO structure should be set to either 0 or at the first byte of data following 
+       the header, if any.  This example has a header and lLogicalFilePos is set using the return code from mmioSeek. 
+
+    o  A file format IOProc must check to see if the MMIO_TRANSLATEDATA or MMIO_TRANSLATEHEADER flag is 
+       set.  If a translate flag is set, it processes the data according to a set of defined interchange formats (refer to 
+       the OS/2 Multimedia Programming Reference for details). If a translate flag is not set, it allows the data to 
+       pass through the IOProc with application-specific modifications.  Translation support is required if the IOProc 
+       is to be supported under the Multimedia Data Converter program. 
+  
+  If the OPEN was successful, the application can obtain information about the media in the file using the 
+  mmioGetHeaderInfo message. 
+
+  The following example illustrates how to handle the MMIOM_OPEN message for a file format IOProc.  The 
+  MMIOM_OPEN message handler uses the mmioOpen function to locate a media data object using an MMIO-supported 
+  storage system IOProc.  Upon opening the data object, an hmmio handle (H1) is returned to the file format IOProc.  
+  This handle is saved in the aulInfo[1] field of MMIOINFO for the file format IOProc.  Upon the return to the 
+  mmioOpen function issued by the application, you will notice that another handle (H2) was already generated and 
+  returned to the application.  These handles allow access to the data object.  The application will use H2, and the 
+  file format IOProc will use H1 with MMIO function calls to the storage system IOProc. 
+
+
+ 
+ The MMIOM_READ message requests that bytes be read from an open file; MMIOM_WRITE message requests that 
+ bytes be written to an open file.  These messages should be handled differently for each IOProc, depending on the 
+ requirements imposed by the file's data.  Because a file might be using buffered I/O, mmioRead and mmioWrite 
+ maintain the lBufOffset and the lDiskOffset fields.  The IOProc should not modify these fields.  If these fields are 
+ needed by the IOProc, the IOProc can use the aulInfo array to maintain.  Additionally, the pExtraInfoStruct can be 
+ used for any user-defined structure that the IOProc requires.  The sample IOProc stores its header in this field to 
+ demonstrate this capability.  If the IOProc is a file format IOProc, it should use mmioRead or mmioWrite calls to 
+ the storage system IOProc, using the internal handle generated during the open processing.  A storage system IOProc 
+ might simply issue calls to DosRead or DosWrite. 
+
+ To implement a file format IOProc for translation mode, and provide support for the MMIO_TRANSLATEDATA flag, 
+ additional code is required for the MMIOM_READ and MMIOM_WRITE message processing. During read processing, 
+ after data is read from the file to a private buffer in its native encoding format, the data must be translated from its 
+ native encoding scheme to the standard presentation format encoding scheme for its media type.  The translated data 
+ is then presented to the application in its read buffer.  Likewise, for write processing, data is received from the 
+ application in the standard presentation format, and must be translated to its native encoding scheme before being 
+ written to the file. 
+
+ 
+ 
+ The MMIOM_READ message requests that bytes be read from an open file; MMIOM_WRITE message requests that 
+ bytes be written to an open file.  These messages should be handled differently for each IOProc, depending on the 
+ requirements imposed by the file's data.  Because a file might be using buffered I/O, mmioRead and mmioWrite 
+ maintain the lBufOffset and the lDiskOffset fields.  The IOProc should not modify these fields.  If these fields are 
+ needed by the IOProc, the IOProc can use the aulInfo array to maintain.  Additionally, the pExtraInfoStruct can be 
+ used for any user-defined structure that the IOProc requires.  The sample IOProc stores its header in this field to 
+ demonstrate this capability.  If the IOProc is a file format IOProc, it should use mmioRead or mmioWrite calls to 
+ the storage system IOProc, using the internal handle generated during the open processing.  A storage system IOProc 
+ might simply issue calls to DosRead or DosWrite. 
+
+ To implement a file format IOProc for translation mode, and provide support for the MMIO_TRANSLATEDATA flag, 
+ additional code is required for the MMIOM_READ and MMIOM_WRITE message processing. During read processing, 
+ after data is read from the file to a private buffer in its native encoding format, the data must be translated from its 
+ native encoding scheme to the standard presentation format encoding scheme for its media type.  The translated data 
+ is then presented to the application in its read buffer.  Likewise, for write processing, data is received from the 
+ application in the standard presentation format, and must be translated to its native encoding scheme before being 
+ written to the file. 
+
+
+
+
+
+ This structure contains the current state information of an open file.  It is returned on the mmioGetInfo function and 
+ used on the mmioSetInfo function. 
+
+ typedef struct _MMIOINFO {
+ ULONG       ulFlags;           /*  Open flags. */
+ FOURCC      fccIOProc;         /*  FOURCC of the IOProc to use. */
+ PMMIOPROC   pIOProc;           /*  Function pointer to IOProc to use. */
+ ULONG       ulErrorRet;        /*  Extended error return code. */
+ LONG        cchBuffer;         /*  I/O buffer size (if used). */
+ PCHAR       pchBuffer;         /*  Start of I/O buffer. */
+ PCHAR       pchNext;           /*  Next byte to read or write in buffer. */
+ PCHAR       pchEndRead;        /*  Last byte in buffer can be read. */
+ PCHAR       pchEndWrite;       /*  Last byte in buffer can be written. */
+ LONG        lBufOffset;        /*  Offset in buffer to pchNext. */
+ LONG        lDiskOffset;       /*  Disk offset in file. */
+ ULONG       aulInfo[4];        /*  IOProc specific field. */
+ LONG        lLogicalFilePos;   /*  Actual file position, buffered or not. */
+ ULONG       ulTranslate;       /*  Translation field. */
+ FOURCC      fccChildIOProc;    /*  FOURCC of child IOProc. */
+ PVOID       pExtraInfoStruct;  /*  Pointer to related structure. */
+ HMMIO       hmmio;             /*  Handle to media element. */
+  } MMIOINFO;
+ 
+ typedef MMIOINFO *PMMIOINFO;
+

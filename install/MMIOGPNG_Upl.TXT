@@ -1,0 +1,15 @@
+Upload Information Template for Walnut Creek OS/2 Hobbes
+--------------------------------------------------------
+
+Archive Name: MMIOGPNG.ZIP
+Author Name:  Giorgio Costa
+Author Email: gi.costa@iol.it
+Author Other (Web page etc..):
+Operating System/Version: OS/2
+Program Source: No
+Replaces:
+Proposed directory for placement: /pub/os2/apps/graphics/viewer
+Program Description (please do not exceed 47 characters):
+ MMPM2 extension for reading PNG files.
+
+

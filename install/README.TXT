@@ -1,0 +1,1 @@
+To install it, just run 'MINSTALL' from the directory where you unzipped this archive.

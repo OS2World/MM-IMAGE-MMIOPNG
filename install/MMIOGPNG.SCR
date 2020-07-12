@@ -1,0 +1,33 @@
+mmioInstall =
+(
+  mmioFourCC        = "GPNG"
+  mmioDllName       = "$(DEST)MMPNG.DLL"
+  mmioDllEntryPoint = "IOProc_Entry"
+  mmioFlags         = 0x000A2080L
+  mmioExtendLen     = 0x00000010L
+  mmioMediaType     = 0x00000001L
+  mmioIOProcType    = 0x00000002L
+  mmioDefExt        = "PNG"
+)
+
+WPObject =
+(
+  WPClassName   = "WPProgram"
+  WPTitle       = "PNG Sample"
+  WPSetupString = "EXENAME=$(DIR)2\\IB.EXE;PROGTYPE=PM;ICONFILE=$(DEST)PNG.ICO;STARTUPDIR=$(DIR)3;ASSOCFILTER=*.PNG;OBJECTID=<MMIOGPNG_Sample_File>"
+  WPLocation    = "<MMPM2_FOLDER>"
+  WPFlags       = 1L
+)
+
+
+
+WPObject =
+(
+  WPClassName   = "WPProgram"
+  WPTitle       = "PNG MMIOProc\nInformation"
+  WPSetupString = "EXENAME=E.EXE;PROGTYPE=PM;STARTUPDIR=$(DIR)2;PARAMETERS=MMIOGPNG.DOC;OBJECTID=<MMIOGPNG_Doc>"
+  WPLocation    = "<MMPM2_FOLDER>"
+  WPFlags       = 2L
+)
+
+
