@@ -1,0 +1,2 @@
+# MM-IMAGE-MMIOPNG
+MMIOPNG CODEC to display PNG images on MMOS2
